@@ -2,21 +2,19 @@ FROM mcr.microsoft.com/dotnet/framework/runtime
 
 LABEL maintainer="cremator"
 
-ENV SONARR_BRANCH="master"
-ENV SONARR_JSON="https://services.sonarr.tv/v1/download/"
-
-RUN powershell -Command \
-    $ErrorActionPreference = 'Stop'; \
-    $ProgressPreference = 'Continue'; \
-	$j = Invoke-RestMethod -Uri "https://services.sonarr.tv/v1/download/master"; \
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+RUN $j = Invoke-RestMethod -Uri "https://services.sonarr.tv/v1/download/master"; \
     Invoke-WebRequest $j.windows.manual.url -OutFile c:\sonarr.zip ; \
     Expand-Archive c:\sonarr.zip -DestinationPath C:\ ; \
     Remove-Item -Path c:\sonarr.zip -Force; \
-	Start-Process "C:\NzbDrone\ServiceInstall.exe" -Wait; \
-	New-Item -ItemType 'Junction' -Path 'C:\Config' -Value 'C:\ProgramData\NzbDrone'
+	Start-Process "C:\NzbDrone\ServiceInstall.exe" -Wait; \	
+	Start-Sleep -s 10; \
+	Stop-Service -name "NzbDrone" -Force -ErrorAction SilentlyContinue; \
+	Start-Sleep -s 10; \
+	Remove-Item "C:/ProgramData/NzbDrone" -Force -Recurse
 
-EXPOSE 7878
+EXPOSE 8989
 
-VOLUME [ "C:/config" ]
+VOLUME [ "C:/ProgramData/NzbDrone", "C:/tv" ]
 
-CMD ["powershell", "Start-Service -name "NzbDrone"]
+CMD "Get-Content C:\ProgramData\NzbDrone\logs\sonarr.txt -Wait"
