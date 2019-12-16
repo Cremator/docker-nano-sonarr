@@ -1,1 +1,1 @@
-# docker-nano-sonarr
+# docker-win-sonarr
